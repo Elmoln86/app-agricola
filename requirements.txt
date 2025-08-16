@@ -4,3 +4,6 @@ tensorflow
 yfinance
 plotly
 earthengine-api
+earthengine-api
+streamlit
+geemap
