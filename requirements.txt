@@ -3,3 +3,4 @@ pandas
 tensorflow
 yfinance
 plotly
+earthengine-api
