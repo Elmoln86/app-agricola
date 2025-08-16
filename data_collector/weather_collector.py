@@ -29,6 +29,9 @@ class DataCollector:
         do Earth Engine.
         """
         try:
+            # AQUI ESTÁ A CORREÇÃO: ee.Initialize()
+            ee.Initialize()
+            
             # Seleciona uma coleção de dados de clima (ex: CHIRPS para precipitação)
             collection = (ee.ImageCollection('NOAA/CFSR')
                           .filterDate(self.start_date, self.end_date)
@@ -74,7 +77,3 @@ if __name__ == '__main__':
     if dados_clima:
         print("\nDados de exemplo coletados com sucesso:")
         print(dados_clima)
-# sat_collector = SatelliteCollector()
-# ndvi_value = sat_collector.get_ndvi(-20.27, -40.30, '2025-01-01', '2025-01-31')
-# print(f"Valor médio de NDVI no período: {ndvi_value}")
-
