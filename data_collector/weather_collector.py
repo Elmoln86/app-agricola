@@ -29,7 +29,7 @@ class DataCollector:
         do Earth Engine.
         """
         try:
-            # AQUI ESTÁ A CORREÇÃO: ee.Initialize()
+            # CORREÇÃO APLICADA AQUI
             ee.Initialize()
             
             # Seleciona uma coleção de dados de clima (ex: CHIRPS para precipitação)
