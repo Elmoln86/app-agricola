@@ -15,13 +15,12 @@ st.title("Plataforma de Gestão Agrícola Inteligente")
 st.markdown("Bem-vindo à sua plataforma integrada de análise e automação agrícola.")
 
 # --- Autenticação e Inicialização da API do Google Earth Engine ---
-# O Streamlit Cloud já tem uma forma de lidar com a autenticação de forma segura,
-# mas para fins de demonstração, a linha abaixo é um bom lembrete.
-# ee.Authenticate()
+# A linha 'ee.Authenticate()' é usada apenas para autenticação manual em ambientes locais.
+# A inicialização 'ee.Initialize()' é necessária para que a API funcione.
 try:
     ee.Initialize()
 except Exception as e:
-    st.error(f"Erro ao inicializar o Google Earth Engine. Verifique se as credenciais estão configuradas corretamente. Erro: {e}")
+    st.error(f"Erro ao inicializar o Google Earth Engine. Verifique as credenciais. Erro: {e}")
 
 
 # --- Instâncias dos Módulos com Argumentos ---
@@ -34,12 +33,12 @@ location_exemplo = ee.Geometry.Point([-47.9382, -15.7801])
 # Instanciando as classes com os argumentos corretos
 weather_collector = DataCollector(start_date=start_date_exemplo, end_date=end_date_exemplo, location=location_exemplo)
 satellite_collector = SatelliteCollector(start_date=start_date_exemplo, end_date=end_date_exemplo, location=location_exemplo)
-financial_collector = FinancialCollector()
-trainer = Trainer()
-predictor = Predictor(model=None)
-chatbot = Chatbot()
-irrigation_controller = IrrigationController()
-digital_twin = DigitalTwin()
+financial_collector = FinancialCollector() # Assume que não precisa de argumentos
+trainer = Trainer() # Assume que não precisa de argumentos
+predictor = Predictor(model=None) # Assume que precisa de um modelo, mas não de dados de entrada na inicialização
+chatbot = Chatbot() # Assume que não precisa de argumentos
+irrigation_controller = IrrigationController() # Assume que não precisa de argumentos
+digital_twin = DigitalTwin() # Assume que não precisa de argumentos
 
 
 # --- Lógica da Aplicação ---
@@ -65,11 +64,6 @@ if st.button("Coletar Dados de Satélite"):
             st.write(dados_satelite)
         else:
             st.error("Não foi possível coletar os dados de satélite.")
-
-
-# Exemplo de como usar o DigitalTwin
-st.header("Visualização do Gêmeo Digital")
-st.warning("A visualização do Gêmeo Digital requer código específico de renderização.")
 
 
 # ... adicione outras seções para os outros módulos ...
