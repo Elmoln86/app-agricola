@@ -20,32 +20,20 @@ st.markdown("Bem-vindo à sua plataforma integrada de análise e automação agr
 # --- Autenticação e Inicialização da API do Google Earth Engine ---
 try:
     # A única forma de fazer isso funcionar no Streamlit Cloud é
-    # criando um arquivo temporário com as credenciais.
+    # usando chaves planas e inicializando com as credenciais lidas.
     
     # Ler a chave privada e o email do secrets.toml
-    earthengine_credentials = st.secrets["earthengine_credentials"]
+    private_key_multiline = st.secrets["earthengine_private_key"]
+    client_email = st.secrets["earthengine_client_email"]
 
-    # Criar um dicionário de credenciais a partir do secrets.toml
-    credentials_json = {
-        "type": "service_account",
-        "project_id": "annular-moon-271712",
-        "private_key_id": "539ea9ad85650ef1c6069690b3817510dc3c691d",
-        "private_key": earthengine_credentials["private_key"],
-        "client_email": earthengine_credentials["client_email"],
-        "token_uri": "https://oauth2.googleapis.com/token"
-    }
-    
-    # Criar um arquivo de credenciais temporário
-    # Isso é necessário porque o Streamlit Cloud tem problemas
-    # para ler as credenciais de outra forma.
-    credentials_file = "/tmp/earthengine_credentials.json"
-    with open(credentials_file, "w") as f:
-        f.write(json.dumps(credentials_json))
-
-    # Inicializar o Earth Engine com o arquivo de credenciais
-    ee.Initialize(credentials_file)
-
-    st.success("🎉 A autenticação com o Google Earth Engine foi bem-sucedida! 🎉")
+    # Inicializar o Earth Engine com as credenciais lidas
+    ee.Initialize(
+        credentials=ee.ServiceAccountCredentials(
+            client_email,
+            private_key_multiline
+        )
+    )
+    st.success("? A autenticação com o Google Earth Engine foi bem-sucedida! 🎉")
     st.write("Isso significa que suas credenciais e conta estão corretas.")
 
     # Exemplo de teste simples para confirmar a conexão
