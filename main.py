@@ -19,26 +19,17 @@ st.markdown("Bem-vindo à sua plataforma integrada de análise e automação agr
 
 # --- Autenticação e Inicialização da API do Google Earth Engine ---
 try:
-    # A autenticação é feita com os dados do secrets.toml, mas usando uma
-    # abordagem mais robusta para lidar com as credenciais da Conta de Serviço.
-    
-    # Criar um dicionário de credenciais a partir do secrets.toml
-    earthengine_credentials_dict = {
-        "type": "service_account",
-        "project_id": "annular-moon-271712",
-        "private_key_id": "539ea9ad85650ef1c6069690b3817510dc3c691d",
-        "private_key": st.secrets["earthengine_credentials"]["private_key"],
-        "client_email": st.secrets["earthengine_credentials"]["client_email"]
-    }
+    # Ler a chave privada e o email do secrets.toml
+    private_key_multiline = st.secrets["earthengine_credentials"]["private_key"]
+    client_email = st.secrets["earthengine_credentials"]["client_email"]
 
-    # Inicializar o Earth Engine com as credenciais
+    # Inicializar o Earth Engine com as credenciais lidas
     ee.Initialize(
         credentials=ee.ServiceAccountCredentials(
-            earthengine_credentials_dict["client_email"],
-            earthengine_credentials_dict["private_key"]
+            client_email,
+            private_key_multiline
         )
     )
-
     st.success("🎉 A autenticação com o Google Earth Engine foi bem-sucedida! 🎉")
     st.write("Isso significa que suas credenciais e conta estão corretas.")
 
@@ -96,4 +87,3 @@ if st.button("Coletar Dados de Satélite"):
             st.write(dados_satelite)
         else:
             st.error("Não foi possível coletar os dados de satélite.")
-
