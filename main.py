@@ -8,6 +8,8 @@ from ia_engine.predict import Predictor
 from ia_engine.llm_chatbot import Chatbot
 from automation.irrigation_controller import IrrigationController
 from digital_twin.visualization import DigitalTwin
+import json
+import os
 
 # --- Configurações da Página Streamlit ---
 st.set_page_config(layout="wide", page_title="App Agrícola Inteligente")
@@ -16,13 +18,27 @@ st.markdown("Bem-vindo à sua plataforma integrada de análise e automação agr
 
 
 # --- Autenticação e Inicialização da API do Google Earth Engine ---
-# O método Initialize() buscará as credenciais no arquivo .streamlit/secrets.toml
-# Esta é a forma mais atualizada e correta de autenticação em ambientes de nuvem.
 try:
-    # A autenticação agora usa o método `ee.Initialize()` sem argumentos,
-    # permitindo que a biblioteca encontre as credenciais do Service Account
-    # no arquivo secrets.toml automaticamente.
-    ee.Initialize()
+    # A autenticação é feita com os dados do secrets.toml, mas usando uma
+    # abordagem mais robusta para lidar com as credenciais da Conta de Serviço.
+    
+    # Criar um dicionário de credenciais a partir do secrets.toml
+    earthengine_credentials_dict = {
+        "type": "service_account",
+        "project_id": "annular-moon-271712",
+        "private_key_id": "539ea9ad85650ef1c6069690b3817510dc3c691d",
+        "private_key": st.secrets["earthengine_credentials"]["private_key"],
+        "client_email": st.secrets["earthengine_credentials"]["client_email"]
+    }
+
+    # Inicializar o Earth Engine com as credenciais
+    ee.Initialize(
+        credentials=ee.ServiceAccountCredentials(
+            earthengine_credentials_dict["client_email"],
+            earthengine_credentials_dict["private_key"]
+        )
+    )
+
     st.success("🎉 A autenticação com o Google Earth Engine foi bem-sucedida! 🎉")
     st.write("Isso significa que suas credenciais e conta estão corretas.")
 
@@ -43,7 +59,6 @@ except Exception as e:
     st.markdown(f"**Detalhes do erro:** {e}")
 
 # --- Instâncias dos Módulos com Argumentos ---
-# Os argumentos de exemplo foram adicionados para as classes que exigem.
 start_date_exemplo = '2024-01-01'
 end_date_exemplo = '2024-01-31'
 location_exemplo = ee.Geometry.Point([-47.9382, -15.7801])
