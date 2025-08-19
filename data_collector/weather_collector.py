@@ -1,23 +1,19 @@
-# Este é o arquivo: weather_collector.py
-
 import ee
 import pandas as pd
-import geemap
+import json
 
 class DataCollector:
     """
-    Uma classe para coletar e processar dados meteorológicos e de satélite
-    usando a API do Google Earth Engine.
+    Coleta dados meteorológicos e ambientais usando o Google Earth Engine.
     """
-
     def __init__(self, start_date, end_date, location):
         """
-        Inicializa o coletor de dados com o intervalo de datas e a localização.
-        
+        Inicializa o coletor de dados.
+
         Args:
             start_date (str): Data de início no formato 'YYYY-MM-DD'.
             end_date (str): Data de fim no formato 'YYYY-MM-DD'.
-            location (ee.Geometry.Point ou ee.Geometry.Polygon): Geometria da área de interesse.
+            location (ee.Geometry): A geometria do ponto ou polígono para a coleta de dados.
         """
         self.start_date = start_date
         self.end_date = end_date
@@ -25,55 +21,53 @@ class DataCollector:
 
     def get_weather_data(self):
         """
-        Coleta dados de precipitação e temperatura de uma coleção de dados
-        do Earth Engine.
+        Coleta dados de temperatura, precipitação e umidade da imagem de reanálise ERA5
+        do Google Earth Engine.
+
+        Returns:
+            pandas.DataFrame: Um DataFrame com os dados coletados, ou None em caso de erro.
         """
         try:
-            # CORREÇÃO APLICADA AQUI
-            ee.Initialize()
+            # Defina o conjunto de dados da imagem de reanálise ERA5
+            era5_image = ee.ImageCollection('ECMWF/ERA5_LAND/MONTHLY') \
+                .filterDate(self.start_date, self.end_date) \
+                .filterBounds(self.location)
+
+            # Defina as variáveis de interesse: temperatura, precipitação e umidade do ar
+            variables = ['temperature_2m', 'total_precipitation', 'dewpoint_temperature_2m']
+
+            # Crie uma função para extrair os dados para cada imagem na coleção
+            def extract_data(image):
+                date = ee.Date(image.get('system:time_start')).format('YYYY-MM-DD')
+                data = image.reduceRegion(
+                    reducer=ee.Reducer.mean(),
+                    geometry=self.location,
+                    scale=1000,
+                    maxPixels=1e9
+                )
+                
+                # Crie um dicionário com a data e os valores de cada variável
+                result = {
+                    'date': date,
+                    'temperature_2m': data.get('temperature_2m'),
+                    'total_precipitation': data.get('total_precipitation'),
+                    'dewpoint_temperature_2m': data.get('dewpoint_temperature_2m')
+                }
+                return ee.Feature(None, result)
+
+            # Mapeie a função sobre a coleção de imagens e converta para uma lista de dicionários
+            features = era5_image.map(extract_data)
             
-            # Seleciona uma coleção de dados de clima (ex: CHIRPS para precipitação)
-            collection = (ee.ImageCollection('NOAA/CFSR')
-                          .filterDate(self.start_date, self.end_date)
-                          .filterBounds(self.location))
-
-            if collection.size().getInfo() == 0:
-                print("Nenhum dado encontrado para a área e período selecionados.")
-                return None
-
-            # Converte a coleção para um objeto GeoPandas para visualização ou análise
-            # A conversão para o lado do cliente (getInfo()) pode ser lenta para grandes conjuntos de dados
+            # Converta o resultado para um pandas DataFrame
+            data_list = features.getInfo()['features']
+            df = pd.DataFrame([feature['properties'] for feature in data_list])
             
-            # Exemplo de como extrair valores médios de uma banda específica
-            mean_temp = collection.select('TMP_2m').mean().reduceRegion(
-                reducer=ee.Reducer.mean(),
-                geometry=self.location,
-                scale=1000 # Escala em metros
-            ).getInfo()
+            return df
 
-            return mean_temp
-
-        except Exception as e:
+        except ee.EEException as e:
             print(f"Erro ao coletar dados do Earth Engine: {e}")
             return None
+        except Exception as e:
+            print(f"Ocorreu um erro: {e}")
+            return None
 
-
-if __name__ == '__main__':
-    # Este é um exemplo de como testar a classe localmente
-    
-    # 1. Autentique e inicialize a API (se estiver rodando no seu ambiente local)
-    # ee.Authenticate()
-    # ee.Initialize()
-    
-    # 2. Defina uma localização de exemplo (ponto em coordenadas lat/lon)
-    exemplo_location = ee.Geometry.Point([-47.9382, -15.7801])
-    
-    # 3. Crie uma instância da classe DataCollector
-    collector = DataCollector('2024-01-01', '2024-01-31', exemplo_location)
-    
-    # 4. Chame o método para coletar os dados
-    dados_clima = collector.get_weather_data()
-    
-    if dados_clima:
-        print("\nDados de exemplo coletados com sucesso:")
-        print(dados_clima)
