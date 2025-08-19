@@ -16,16 +16,13 @@ st.markdown("Bem-vindo à sua plataforma integrada de análise e automação agr
 
 
 # --- Autenticação e Inicialização da API do Google Earth Engine ---
-# Este é o método de autenticação correto para o Streamlit Cloud.
-# Ele usa as credenciais de uma Conta de Serviço que você precisa criar.
+# O método Initialize() buscará as credenciais no arquivo .streamlit/secrets.toml
+# Esta é a forma mais atualizada e correta de autenticação em ambientes de nuvem.
 try:
-    # A autenticação é feita com os dados do secrets.toml.
-    credentials = ee.ServiceAccountCredentials(
-        st.secrets["earthengine_credentials"]["client_email"],
-        st.secrets["earthengine_credentials"]["private_key"],
-        scopes=ee.oauth.SCOPES
-    )
-    ee.Initialize(credentials)
+    # A autenticação agora usa o método `ee.Initialize()` sem argumentos,
+    # permitindo que a biblioteca encontre as credenciais do Service Account
+    # no arquivo secrets.toml automaticamente.
+    ee.Initialize()
     st.success("🎉 A autenticação com o Google Earth Engine foi bem-sucedida! 🎉")
     st.write("Isso significa que suas credenciais e conta estão corretas.")
 
@@ -46,6 +43,7 @@ except Exception as e:
     st.markdown(f"**Detalhes do erro:** {e}")
 
 # --- Instâncias dos Módulos com Argumentos ---
+# Os argumentos de exemplo foram adicionados para as classes que exigem.
 start_date_exemplo = '2024-01-01'
 end_date_exemplo = '2024-01-31'
 location_exemplo = ee.Geometry.Point([-47.9382, -15.7801])
@@ -83,3 +81,4 @@ if st.button("Coletar Dados de Satélite"):
             st.write(dados_satelite)
         else:
             st.error("Não foi possível coletar os dados de satélite.")
+
