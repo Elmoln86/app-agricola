@@ -1,16 +1,22 @@
 import streamlit as st
 import ee
-# Altere as importações para o formato relativo para resolver o problema de importação no Codespaces/Streamlit
-from .data_collector.weather_collector import DataCollector
-from .data_collector.satellite_collector import SatelliteCollector
-from .data_collector.financial_collector import FinancialCollector
-from .ia_engine.training import Trainer
-from .ia_engine.predict import Predictor
-from .ia_engine.llm_chatbot import Chatbot
-from .automation.irrigation_controller import IrrigationController
-from .digital_twin.visualization import DigitalTwin
-import json
+import sys
 import os
+import json
+
+# Adiciona o diretório raiz do projeto ao sys.path para importações absolutas
+sys.path.append(os.path.dirname(__file__))
+
+# --- Módulos personalizados ---
+from data_collector.weather_collector import DataCollector
+from data_collector.satellite_collector import SatelliteCollector
+from data_collector.financial_collector import FinancialCollector
+from ia_engine.training import Trainer
+from ia_engine.predict import Predictor
+from ia_engine.llm_chatbot import Chatbot
+from automation.irrigation_controller import IrrigationController
+from digital_twin.visualization import DigitalTwin
+
 
 # --- Configurações da Página Streamlit ---
 st.set_page_config(layout="wide", page_title="App Agrícola Inteligente")
@@ -49,7 +55,7 @@ try:
 except Exception as e:
     st.error("❌ Erro ao inicializar o Google Earth Engine. ❌")
     st.write("Ocorreu um problema com a autenticação. Por favor, verifique os seguintes pontos:")
-    st.markdown("- Suas credenciais no arquivo `secrets.toml` estão corretas.")
+    st.markdown("- Suas credenciais no painel de `Secrets` do Streamlit Cloud estão corretas.")
     st.markdown("- Sua conta Google foi aprovada para usar o Earth Engine.")
     st.markdown(f"**Detalhes do erro:** {e}")
 
@@ -91,4 +97,3 @@ if st.button("Coletar Dados de Satélite"):
             st.write(dados_satelite)
         else:
             st.error("Não foi possível coletar os dados de satélite.")
-
