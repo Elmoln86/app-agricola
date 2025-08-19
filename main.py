@@ -1,13 +1,14 @@
 import streamlit as st
 import ee
-from data_collector.weather_collector import DataCollector
-from data_collector.satellite_collector import SatelliteCollector
-from data_collector.financial_collector import FinancialCollector
-from ia_engine.training import Trainer
-from ia_engine.predict import Predictor
-from ia_engine.llm_chatbot import Chatbot
-from automation.irrigation_controller import IrrigationController
-from digital_twin.visualization import DigitalTwin
+# Altere as importações para o formato relativo para resolver o problema de importação no Codespaces/Streamlit
+from .data_collector.weather_collector import DataCollector
+from .data_collector.satellite_collector import SatelliteCollector
+from .data_collector.financial_collector import FinancialCollector
+from .ia_engine.training import Trainer
+from .ia_engine.predict import Predictor
+from .ia_engine.llm_chatbot import Chatbot
+from .automation.irrigation_controller import IrrigationController
+from .digital_twin.visualization import DigitalTwin
 import json
 import os
 
@@ -33,7 +34,7 @@ try:
             private_key_multiline
         )
     )
-    st.success("? A autenticação com o Google Earth Engine foi bem-sucedida! 🎉")
+    st.success("🎉 A autenticação com o Google Earth Engine foi bem-sucedida! 🎉")
     st.write("Isso significa que suas credenciais e conta estão corretas.")
 
     # Exemplo de teste simples para confirmar a conexão
@@ -90,3 +91,4 @@ if st.button("Coletar Dados de Satélite"):
             st.write(dados_satelite)
         else:
             st.error("Não foi possível coletar os dados de satélite.")
+
