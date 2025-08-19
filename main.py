@@ -16,22 +16,13 @@ st.markdown("Bem-vindo à sua plataforma integrada de análise e automação agr
 
 
 # --- Autenticação e Inicialização da API do Google Earth Engine ---
-# A linha 'ee.Authenticate()' é usada apenas para autenticação manual em ambientes locais.
-# A inicialização 'ee.Initialize()' é necessária para que a API funcione.
+# O erro estava aqui. A sua conta é do tipo 'authorized_user' (usuário autorizado),
+# e a função `ee.ServiceAccountCredentials` é para 'service account' (conta de serviço).
+# A forma correta de inicializar com suas credenciais é usando `ee.Initialize()`
+# sem argumentos. A biblioteca do Earth Engine é inteligente o suficiente para
+# encontrar as credenciais no arquivo .streamlit/secrets.toml por conta própria.
 try:
-    # Use o segredo do Streamlit Cloud para autenticação
-    # Esta é a parte que resolve o erro de autenticação.
-    if "earthengine_credentials" in st.secrets:
-        creds = ee.ServiceAccountCredentials(
-            st.secrets["earthengine_credentials"]["client_id"],
-            st.secrets["earthengine_credentials"]["client_secret"],
-            st.secrets["earthengine_credentials"]["refresh_token"]
-        )
-        ee.Initialize(creds)
-    else:
-        # Se não houver segredo, tente a autenticação padrão (para desenvolvimento local)
-        ee.Initialize()
-        
+    ee.Initialize()
     st.success("Google Earth Engine inicializado com sucesso!")
 except Exception as e:
     st.error(f"Erro ao inicializar o Google Earth Engine. Verifique as credenciais. Erro: {e}")
@@ -46,8 +37,8 @@ location_exemplo = ee.Geometry.Point([-47.9382, -15.7801])
 # Instanciando as classes com os argumentos corretos
 weather_collector = DataCollector(start_date=start_date_exemplo, end_date=end_date_exemplo, location=location_exemplo)
 satellite_collector = SatelliteCollector(start_date=start_date_exemplo, end_date=end_date_exemplo, location=location_exemplo)
-financial_collector = FinancialCollector() 
-trainer = Trainer() 
+financial_collector = FinancialCollector()
+trainer = Trainer()
 predictor = Predictor(model=None)
 chatbot = Chatbot()
 irrigation_controller = IrrigationController()
