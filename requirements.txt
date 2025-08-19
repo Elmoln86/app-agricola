@@ -3,7 +3,8 @@ pandas
 tensorflow
 yfinance
 plotly
-earthengine-api
+earthengine-api>=0.1.373
 streamlit
 geemap
+
 
