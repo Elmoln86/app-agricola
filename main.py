@@ -23,6 +23,7 @@ try:
     status_message.info("Conectando ao Google Earth Engine...")
     
     # Inicializa a API do Earth Engine com as credenciais da conta de serviço
+    # A correção está aqui: a chave privada é passada como uma string diretamente.
     credentials = ee.ServiceAccountCredentials(ee_client_email, ee_private_key)
     ee.Initialize(credentials)
     
@@ -60,4 +61,3 @@ except Exception as e:
     st.error(f"Erro ao inicializar o Google Earth Engine: {e}")
     st.warning("Verifique se as credenciais no painel de segredos do Streamlit Cloud estão corretas e se sua conta tem as permissões de acesso ao Earth Engine.")
     st.info("Para mais informações sobre o erro, verifique os logs de implantação no Streamlit Cloud.")
-
