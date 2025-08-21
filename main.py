@@ -1,6 +1,5 @@
 import streamlit as st
 import ee
-import ee.mapclient
 
 st.set_page_config(
     page_title="Plataforma de Gestão Agrícola Inteligente",
@@ -61,5 +60,4 @@ except Exception as e:
     st.error(f"Erro ao inicializar o Google Earth Engine: {e}")
     st.warning("Verifique se as credenciais no painel de segredos do Streamlit Cloud estão corretas e se sua conta tem as permissões de acesso ao Earth Engine.")
     st.info("Para mais informações sobre o erro, verifique os logs de implantação no Streamlit Cloud.")
-
 
