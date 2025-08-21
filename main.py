@@ -1,100 +1,65 @@
 import streamlit as st
 import ee
-import sys
-import os
-import json
+import ee.mapclient
 
-# Adiciona o diretório raiz do projeto ao sys.path para importações absolutas
-sys.path.append(os.path.dirname(__file__))
+st.set_page_config(
+    page_title="Plataforma de Gestão Agrícola Inteligente",
+    layout="wide"
+)
 
-# --- Módulos personalizados ---
-from data_collector.weather_collector import DataCollector
-from data_collector.satellite_collector import SatelliteCollector
-from data_collector.financial_collector import FinancialCollector
-from ia_engine.training import Trainer
-from ia_engine.predict import Predictor
-from ia_engine.llm_chatbot import Chatbot
-from automation.irrigation_controller import IrrigationController
-from digital_twin.visualization import DigitalTwin
-
-
-# --- Configurações da Página Streamlit ---
-st.set_page_config(layout="wide", page_title="App Agrícola Inteligente")
+# Título da aplicação
 st.title("Plataforma de Gestão Agrícola Inteligente")
 st.markdown("Bem-vindo à sua plataforma integrada de análise e automação agrícola.")
 
+# Mensagem de status
+status_message = st.empty()
 
-# --- Autenticação e Inicialização da API do Google Earth Engine ---
+# Corrigido: Usando st.secrets para acessar as credenciais do secrets.toml
 try:
-    # A única forma de fazer isso funcionar no Streamlit Cloud é
-    # usando chaves planas e inicializando com as credenciais lidas.
+    # Acessa os segredos do Streamlit Cloud
+    ee_client_email = st.secrets["earthengine"]["earthengine_client_email"]
+    ee_private_key = st.secrets["earthengine"]["earthengine_private_key"]
     
-    # Ler a chave privada e o email do secrets.toml
-    private_key_multiline = st.secrets["earthengine_private_key"]
-    client_email = st.secrets["earthengine_client_email"]
+    # Exibe uma mensagem de status para o usuário
+    status_message.info("Conectando ao Google Earth Engine...")
+    
+    # Inicializa a API do Earth Engine com as credenciais da conta de serviço
+    credentials = ee.ServiceAccountCredentials(ee_client_email, ee_private_key)
+    ee.Initialize(credentials)
+    
+    # Se a inicialização for bem-sucedida, exibe uma mensagem de sucesso
+    status_message.success("Conexão com o Google Earth Engine bem-sucedida!")
 
-    # Inicializar o Earth Engine com as credenciais lidas
-    ee.Initialize(
-        credentials=ee.ServiceAccountCredentials(
-            client_email,
-            private_key_multiline
-        )
-    )
-    st.success("🎉 A autenticação com o Google Earth Engine foi bem-sucedida! 🎉")
-    st.write("Isso significa que suas credenciais e conta estão corretas.")
+    # Exemplo de código GEE para mostrar que a autenticação funcionou
+    # Apenas como um teste simples
+    # Ponto de exemplo (Bragança Paulista)
+    point = ee.Geometry.Point([-46.5413, -22.9545])
+    
+    # Imagem Landsat
+    landsat_image = ee.Image('LANDSAT/LC08/C01/T1_SR/LC08_219076_20170118')
+    
+    # Recorta a imagem
+    clipped_image = landsat_image.clip(point.buffer(10000))
+    
+    # Exibe o mapa na interface
+    st.write("Exemplo de Imagem Landsat:")
+    # Acha o ponto central
+    center = clipped_image.geometry().centroid().getInfo()['coordinates']
+    
+    # Cria a URL do mapa
+    landsat_viz = {'bands': ['B4', 'B3', 'B2'], 'min': 0, 'max': 3000, 'gamma': 1.4}
+    map_id = landsat_image.getMapId(landsat_viz)
+    
+    st.image(f"https://earthengine.googleapis.com/v1alpha/projects/{ee.data._get_project_name()}/maps/{map_id['mapid']}/tiles/{{z}}/{{x}}/{{y}}",
+             caption="Imagem Landsat (visualização RGB)",
+             use_column_width=True)
 
-    # Exemplo de teste simples para confirmar a conexão
-    st.header("Teste de Conexão com a API")
-    try:
-        location = ee.Geometry.Point([-47.9382, -15.7801])
-        st.write("Conexão com o Earth Engine estabelecida com sucesso!")
-        st.write(f"Geometria de teste: {location.getInfo()}")
-    except ee.EEException as e:
-        st.error(f"Erro ao executar o teste da API. O problema ainda pode ser na sua conta. Erro: {e}")
+    st.write("A sua autenticação funcionou, agora você pode continuar com o desenvolvimento!")
 
 except Exception as e:
-    st.error("❌ Erro ao inicializar o Google Earth Engine. ❌")
-    st.write("Ocorreu um problema com a autenticação. Por favor, verifique os seguintes pontos:")
-    st.markdown("- Suas credenciais no painel de `Secrets` do Streamlit Cloud estão corretas.")
-    st.markdown("- Sua conta Google foi aprovada para usar o Earth Engine.")
-    st.markdown(f"**Detalhes do erro:** {e}")
+    # Se ocorrer qualquer erro, exibe a mensagem de erro completa
+    st.error(f"Erro ao inicializar o Google Earth Engine: {e}")
+    st.warning("Verifique se as credenciais no painel de segredos do Streamlit Cloud estão corretas e se sua conta tem as permissões de acesso ao Earth Engine.")
+    st.info("Para mais informações sobre o erro, verifique os logs de implantação no Streamlit Cloud.")
 
-# --- Instâncias dos Módulos com Argumentos ---
-start_date_exemplo = '2024-01-01'
-end_date_exemplo = '2024-01-31'
-location_exemplo = ee.Geometry.Point([-47.9382, -15.7801])
-
-# Instanciando as classes com os argumentos corretos
-weather_collector = DataCollector(start_date=start_date_exemplo, end_date=end_date_exemplo, location=location_exemplo)
-satellite_collector = SatelliteCollector(start_date=start_date_exemplo, end_date=end_date_exemplo, location=location_exemplo)
-financial_collector = FinancialCollector()
-trainer = Trainer()
-predictor = Predictor(model=None)
-chatbot = Chatbot()
-irrigation_controller = IrrigationController()
-digital_twin = DigitalTwin()
-
-# --- Lógica da Aplicação ---
-
-# Exemplo de como usar o DataCollector
-st.header("Dados Meteorológicos")
-if st.button("Coletar Dados Meteorológicos"):
-    with st.spinner('Coletando dados...'):
-        dados_tempo = weather_collector.get_weather_data()
-        if dados_tempo is not None:
-            st.success("Dados de tempo coletados com sucesso!")
-            st.dataframe(dados_tempo.head())
-        else:
-            st.error("Não foi possível coletar os dados de tempo.")
-
-# Exemplo de como usar o SatelliteCollector
-st.header("Análise de Satélite (NDVI)")
-if st.button("Coletar Dados de Satélite"):
-    with st.spinner('Coletando dados...'):
-        dados_satelite = satellite_collector.get_ndvi_data()
-        if dados_satelite is not None:
-            st.success("Dados de satélite coletados com sucesso!")
-            st.write(dados_satelite)
-        else:
-            st.error("Não foi possível coletar os dados de satélite.")
 
