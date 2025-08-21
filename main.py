@@ -13,7 +13,7 @@ st.markdown("Bem-vindo à sua plataforma integrada de análise e automação agr
 # Mensagem de status
 status_message = st.empty()
 
-# Corrigido: Usando st.secrets para acessar as credenciais do secrets.toml
+# Corrigido: Usando st.secrets para acessar as credenciais da conta de serviço
 try:
     # Acessa os segredos do Streamlit Cloud
     ee_client_email = st.secrets["earthengine"]["earthengine_client_email"]
