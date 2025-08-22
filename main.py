@@ -1,4 +1,4 @@
-rt streamlit as st
+import streamlit as st
 import ee
 import json
 import os
@@ -17,7 +17,6 @@ st.title("Plataforma de Gestão Agrícola Inteligente")
 st.markdown("Bem-vindo à sua plataforma integrada de análise e automação agrícola.")
 
 # --- Autenticação e Inicialização da API do Google Earth Engine ---
-# Este bloco de código agora forçará a autenticação usando o JSON do arquivo secrets.toml
 try:
     st.header("Status da Autenticação do Google Earth Engine")
 
@@ -97,3 +96,4 @@ if st.button("Coletar Dados de Satélite"):
             st.write(dados_satelite)
         else:
             st.error("Não foi possível coletar os dados de satélite.")
+
