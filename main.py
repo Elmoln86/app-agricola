@@ -19,10 +19,10 @@ st.markdown("Bem-vindo à sua plataforma integrada de análise e automação agr
 
 # --- Autenticação e Inicialização da API do Google Earth Engine ---
 try:
-    # Ler a chave privada e o email do secrets.toml
-    # A chave agora é lida diretamente no formato multiline
-    private_key = st.secrets["earthengine"]["earthengine_private_key"]
-    client_email = st.secrets["earthengine"]["earthengine_client_email"]
+    # Acessa as chaves do segredo 'earthengine'
+    # Esta é a maneira correta de ler a chave multiline do secrets.toml
+    private_key = st.secrets.earthengine.earthengine_private_key
+    client_email = st.secrets.earthengine.earthengine_client_email
     
     # Inicializar o Earth Engine com as credenciais lidas
     ee.Initialize(
