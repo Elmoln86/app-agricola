@@ -8,8 +8,6 @@ from ia_engine.predict import Predictor
 from ia_engine.llm_chatbot import Chatbot
 from automation.irrigation_controller import IrrigationController
 from digital_twin.visualization import DigitalTwin
-import json
-import os
 
 # --- Configurações da Página Streamlit ---
 st.set_page_config(layout="wide", page_title="App Agrícola Inteligente")
@@ -18,19 +16,13 @@ st.markdown("Bem-vindo à sua plataforma integrada de análise e automação agr
 
 
 # --- Autenticação e Inicialização da API do Google Earth Engine ---
+# O método Initialize() buscará as credenciais no arquivo .streamlit/secrets.toml
+# Esta é a forma mais atualizada e correta de autenticação em ambientes de nuvem.
 try:
-    # Acessa as chaves do segredo 'earthengine'
-    # Esta é a maneira correta de ler a chave multiline do secrets.toml
-    private_key = st.secrets.earthengine.earthengine_private_key
-    client_email = st.secrets.earthengine.earthengine_client_email
-    
-    # Inicializar o Earth Engine com as credenciais lidas
-    ee.Initialize(
-        credentials=ee.ServiceAccountCredentials(
-            client_email,
-            private_key
-        )
-    )
+    # A autenticação agora usa o método `ee.Initialize()` sem argumentos,
+    # permitindo que a biblioteca encontre as credenciais do Service Account
+    # no arquivo secrets.toml automaticamente.
+    ee.Initialize()
     st.success("🎉 A autenticação com o Google Earth Engine foi bem-sucedida! 🎉")
     st.write("Isso significa que suas credenciais e conta estão corretas.")
 
@@ -51,6 +43,7 @@ except Exception as e:
     st.markdown(f"**Detalhes do erro:** {e}")
 
 # --- Instâncias dos Módulos com Argumentos ---
+# Os argumentos de exemplo foram adicionados para as classes que exigem.
 start_date_exemplo = '2024-01-01'
 end_date_exemplo = '2024-01-31'
 location_exemplo = ee.Geometry.Point([-47.9382, -15.7801])
