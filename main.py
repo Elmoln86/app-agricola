@@ -19,28 +19,16 @@ st.markdown("Bem-vindo à sua plataforma integrada de análise e automação agr
 
 # --- Autenticação e Inicialização da API do Google Earth Engine ---
 try:
-    # A única forma de fazer isso funcionar no Streamlit Cloud é
-    # usando chaves planas e inicializando com as credenciais lidas.
-    
     # Ler a chave privada e o email do secrets.toml
-    # Assumimos que a chave privada está em uma única linha,
-    # por isso a correção no código para adicionar as quebras de linha.
-    private_key = st.secrets["earthengine_private_key"]
-    client_email = st.secrets["earthengine_client_email"]
+    # A chave agora é lida diretamente no formato multiline
+    private_key = st.secrets["earthengine"]["earthengine_private_key"]
+    client_email = st.secrets["earthengine"]["earthengine_client_email"]
     
-    # Reconstruir a chave privada com as quebras de linha corretas
-    private_key_multiline = private_key.replace("-----BEGIN PRIVATE KEY-----", "-----BEGIN PRIVATE KEY-----\n")
-    private_key_multiline = private_key_multiline.replace("-----END PRIVATE KEY-----", "\n-----END PRIVATE KEY-----")
-    
-    # Substitui espaços por quebras de linha para formatar corretamente a chave
-    lines = private_key_multiline.split(" ")
-    private_key_multiline_final = "-----BEGIN PRIVATE KEY-----\n" + "\n".join(lines[1:-1]) + "\n-----END PRIVATE KEY-----"
-
     # Inicializar o Earth Engine com as credenciais lidas
     ee.Initialize(
         credentials=ee.ServiceAccountCredentials(
             client_email,
-            private_key_multiline_final
+            private_key
         )
     )
     st.success("🎉 A autenticação com o Google Earth Engine foi bem-sucedida! 🎉")
