@@ -1,4 +1,4 @@
-import streamlit as st
+rt streamlit as st
 import ee
 import json
 import os
@@ -17,15 +17,29 @@ st.title("Plataforma de Gestão Agrícola Inteligente")
 st.markdown("Bem-vindo à sua plataforma integrada de análise e automação agrícola.")
 
 # --- Autenticação e Inicialização da API do Google Earth Engine ---
-# Este bloco de código deve ser o primeiro a ser executado no script,
-# antes de qualquer outra função que use a biblioteca 'ee'.
+# Este bloco de código agora forçará a autenticação usando o JSON do arquivo secrets.toml
 try:
-    # O método ee.Initialize() lerá as credenciais do Service Account
-    # do arquivo secrets.toml automaticamente se estiverem formatadas corretamente.
+    st.header("Status da Autenticação do Google Earth Engine")
+
+    # Tenta obter as credenciais do Streamlit secrets
+    creds_json = st.secrets["gee_credentials"]["private_key_json"]
+
+    # Se a chave for uma string, parseia para JSON
+    if isinstance(creds_json, str):
+        creds_json = json.loads(creds_json)
+
+    # Autentica diretamente usando as credenciais do JSON
+    ee.Authenticate(credentials=ee.ServiceAccountCredentials(
+        creds_json["client_email"],
+        creds_json["private_key"]
+    ))
+    
+    # Inicializa a API
     ee.Initialize()
+
     st.success("🎉 A autenticação com o Google Earth Engine foi bem-sucedida! 🎉")
     st.write("Isso significa que suas credenciais estão funcionando e as permissões foram concedidas.")
-
+    
     # Exemplo de teste simples para confirmar a conexão
     st.header("Teste de Conexão com a API")
     try:
@@ -33,23 +47,19 @@ try:
         st.write("Conexão com o Earth Engine estabelecida com sucesso!")
         st.write(f"Geometria de teste: {location.getInfo()}")
     except ee.EEException as e:
-        # Se este erro ocorrer, o problema ainda é de permissão na conta do Google Earth Engine.
         st.error(f"Erro ao executar o teste da API. O problema ainda pode ser na sua conta. Erro: {e}")
 
 except Exception as e:
-    # Se a inicialização falhar por qualquer motivo (formato de chave, permissão, etc.),
-    # este bloco de erro será executado, e o script será parado.
     st.error("❌ Erro ao inicializar o Google Earth Engine. ❌")
     st.write("Ocorreu um problema com a autenticação. Por favor, verifique os seguintes pontos:")
     st.markdown("- Suas credenciais no arquivo `secrets.toml` estão formatadas corretamente.")
     st.markdown("- Sua conta de serviço tem as permissões necessárias no seu projeto do Google Cloud e no Google Earth Engine.")
+    st.markdown("- A chave privada no seu `secrets.toml` está correta e não tem caracteres extra.")
     st.markdown(f"**Detalhes do erro:** {e}")
-    # O st.stop() é crucial para interromper a execução e evitar mais erros.
     st.stop()
 
 
 # --- Instâncias dos Módulos com Argumentos ---
-# Agora que a autenticação está garantida, podemos instanciar as classes.
 start_date_exemplo = '2024-01-01'
 end_date_exemplo = '2024-01-31'
 location_exemplo = ee.Geometry.Point([-47.9382, -15.7801])
