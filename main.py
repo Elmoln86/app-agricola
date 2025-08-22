@@ -23,17 +23,27 @@ try:
     # usando chaves planas e inicializando com as credenciais lidas.
     
     # Ler a chave privada e o email do secrets.toml
-    private_key_multiline = st.secrets["earthengine_private_key"]
+    # Assumimos que a chave privada está em uma única linha,
+    # por isso a correção no código para adicionar as quebras de linha.
+    private_key = st.secrets["earthengine_private_key"]
     client_email = st.secrets["earthengine_client_email"]
+    
+    # Reconstruir a chave privada com as quebras de linha corretas
+    private_key_multiline = private_key.replace("-----BEGIN PRIVATE KEY-----", "-----BEGIN PRIVATE KEY-----\n")
+    private_key_multiline = private_key_multiline.replace("-----END PRIVATE KEY-----", "\n-----END PRIVATE KEY-----")
+    
+    # Substitui espaços por quebras de linha para formatar corretamente a chave
+    lines = private_key_multiline.split(" ")
+    private_key_multiline_final = "-----BEGIN PRIVATE KEY-----\n" + "\n".join(lines[1:-1]) + "\n-----END PRIVATE KEY-----"
 
     # Inicializar o Earth Engine com as credenciais lidas
     ee.Initialize(
         credentials=ee.ServiceAccountCredentials(
             client_email,
-            private_key_multiline
+            private_key_multiline_final
         )
     )
-    st.success("? A autenticação com o Google Earth Engine foi bem-sucedida! 🎉")
+    st.success("🎉 A autenticação com o Google Earth Engine foi bem-sucedida! 🎉")
     st.write("Isso significa que suas credenciais e conta estão corretas.")
 
     # Exemplo de teste simples para confirmar a conexão
@@ -90,4 +100,3 @@ if st.button("Coletar Dados de Satélite"):
             st.write(dados_satelite)
         else:
             st.error("Não foi possível coletar os dados de satélite.")
-
