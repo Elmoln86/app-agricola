@@ -1,111 +1,84 @@
+import os
 import streamlit as st
 import ee
 import json
-import os
-from data_collector.weather_collector import DataCollector
-from data_collector.satellite_collector import SatelliteCollector
-from data_collector.financial_collector import FinancialCollector
-from ia_engine.training import Trainer
-from ia_engine.predict import Predictor
-from ia_engine.llm_chatbot import Chatbot
-from automation.irrigation_controller import IrrigationController
-from digital_twin.visualization import DigitalTwin
+from google.oauth2.service_account import Credentials
 
-# --- Configurações da Página Streamlit ---
-st.set_page_config(layout="wide", page_title="App Agrícola Inteligente")
+st.set_page_config(
+    page_title="Plataforma de Gestão Agrícola Inteligente",
+    layout="wide"
+)
+
+# Título da aplicação
 st.title("Plataforma de Gestão Agrícola Inteligente")
-st.markdown("Bem-vindo à sua plataforma integrada de análise e automação agrícola.")
+st.write("Bem-vindo à sua plataforma integrada de análise e automação agrícola.")
 
-def authenticate_google_earth_engine():
-    """
-    Autentica a aplicação com o Google Earth Engine.
-    Lê o caminho do arquivo de chave privada dos segredos do Streamlit,
-    carrega as credenciais e inicializa a API do Earth Engine.
-    """
-    try:
-        st.header("Status da Autenticação do Google Earth Engine")
+st.divider()
+
+# Iniciar o Google Earth Engine
+st.header("Status da Autenticação do Google Earth Engine")
+st.info("A tentar autenticar com o Google Earth Engine...")
+
+# Tente carregar o JSON diretamente da variável de ambiente
+try:
+    # Obtém o conteúdo JSON da variável de ambiente
+    # A variável deve ser definida no Streamlit Cloud com o nome EE_CREDENTIALS
+    credentials_json = os.environ['EE_CREDENTIALS']
+    
+    # Decodifica a string JSON para um objeto Python
+    EE_CREDENTIALS = json.loads(credentials_json)
+    
+    # Se a chave privada contiver quebras de linha escapadas ('\n'),
+    # o json.loads() já as deve ter processado. No entanto, se o segredo
+    # foi colado de uma forma diferente, pode ser necessário este passo extra.
+    # Ex: se o utilizador colou o valor com '\n' literalmente
+    if isinstance(EE_CREDENTIALS, dict) and "private_key" in EE_CREDENTIALS:
+        if '\\n' in EE_CREDENTIALS["private_key"]:
+            EE_CREDENTIALS["private_key"] = EE_CREDENTIALS["private_key"].replace('\\n', '\n')
+
+    # Autenticar com as credenciais da conta de serviço
+    creds = Credentials.from_service_account_info(EE_CREDENTIALS)
+    ee.Initialize(credentials=creds)
+    
+    st.success("Autenticação com o Google Earth Engine concluída com sucesso!")
+    st.write("Agora pode começar a usar as funcionalidades do Earth Engine.")
+    
+except KeyError:
+    st.error("Variável de ambiente 'EE_CREDENTIALS' não encontrada.")
+    st.warning("Por favor, adicione as suas credenciais de conta de serviço do Google Earth Engine como uma variável de ambiente.")
+    st.warning("Nas definições da sua aplicação no Streamlit Cloud, adicione um 'Secret' com a chave 'EE_CREDENTIALS' e o valor como o conteúdo do seu ficheiro JSON.")
+except json.JSONDecodeError as e:
+    st.error(f"Erro ao decodificar JSON da variável de ambiente 'EE_CREDENTIALS': {e}")
+    st.warning("Verifique se as suas credenciais estão num formato JSON válido e se a 'private_key' está numa única linha.")
+except Exception as e:
+    st.error(f"Ocorreu um erro ao inicializar o Google Earth Engine: {e}")
+    st.info("Ocorreu um problema com a autenticação. Por favor, verifique os seguintes pontos:")
+    st.info("- As suas credenciais estão no formato JSON correto.")
+    st.info("- A sua conta de serviço tem as permissões necessárias no seu projeto do Google Cloud e no Google Earth Engine.")
+    st.info("- O 'Secret' no Streamlit Cloud foi adicionado e formatado corretamente.")
+
+# Exemplo de funcionalidade do Earth Engine (apenas para verificação)
+try:
+    if ee.data.getAccessToken() is not None:
+        st.header("Exemplo de Mapa")
+        st.write("Este mapa é gerado usando dados do Google Earth Engine para confirmar que a autenticação funcionou.")
         
-        # Acessa o caminho do arquivo de segredos
-        key_file_path = st.secrets["gee_credentials"]["private_key_path"]
+        # Exemplo simples: visualizar a elevação global
+        dem = ee.Image('USGS/SRTMGL1_003')
+        vis_params = {'min': 0, 'max': 4000}
         
-        # O Streamlit já carrega o arquivo no ambiente de deploy
-        # mas para testes locais, verifique a existência
-        if not os.path.exists(key_file_path):
-            st.error(f"❌ Erro: O arquivo de chave privada '{key_file_path}' não foi encontrado.")
-            st.info("Por favor, certifique-se de que o arquivo está no diretório correto e que o nome no 'secrets.toml' está correto.")
-            return False
-
-        with open(key_file_path, 'r') as f:
-            credentials_json = json.load(f)
-
-        ee.Authenticate(credentials=ee.ServiceAccountCredentials(
-            credentials_json['client_email'],
-            credentials_json['private_key']
-        ))
+        # Mova o mapa para uma localização global (opcional)
+        map_object = ee.mapclient.centerMap(-112.87, 36.31, 10)
         
-        ee.Initialize()
+        # Adicionar o layer de elevação ao mapa
+        map_id = dem.getMapId(vis_params)
         
-        st.success("� A autenticação com o Google Earth Engine foi bem-sucedida! 🎉")
-        st.write("Isso significa que as suas credenciais foram lidas corretamente e a conexão foi estabelecida.")
-        
-        # Exemplo de teste simples para confirmar a conexão
-        st.header("Teste de Conexão com a API")
-        try:
-            location = ee.Geometry.Point([-47.9382, -15.7801])
-            st.write("Conexão com o Earth Engine estabelecida com sucesso!")
-            st.write(f"Geometria de teste: {location.getInfo()}")
-        except ee.EEException as e:
-            st.error(f"Erro ao executar o teste da API. O problema ainda pode ser nas permissões da sua conta. Erro: {e}")
-        return True
+        # Inserir o mapa no streamlit
+        # Nota: O streamlit-folium é uma boa biblioteca para integrar mapas
+        # mas para este exemplo, vamos manter a simplicidade.
+        st.write("Mapa de elevação SRTM (apenas um exemplo visual).")
 
-    except KeyError:
-        st.error("❌ Erro: A chave 'private_key_path' não foi encontrada nos seus segredos do Streamlit. Por favor, verifique se a sua configuração de secrets está correta.")
-        return False
-    except Exception as e:
-        st.error(f"❌ Erro ao inicializar o Google Earth Engine. ❌")
-        st.write("Ocorreu um problema com a autenticação. Por favor, verifique os seguintes pontos:")
-        st.markdown("- As suas credenciais no arquivo `ee-service-account.json` estão formatadas corretamente.")
-        st.markdown("- A sua conta de serviço tem as permissões necessárias no seu projeto do Google Cloud e no Google Earth Engine.")
-        st.markdown(f"**Detalhes do erro:** {e}")
-        return False
+except Exception as e:
+    st.warning(f"Não foi possível executar a funcionalidade de exemplo do EE. Erro: {e}")
+    st.write("Isto pode acontecer se a autenticação falhou.")
 
-# Executa a autenticação no início da aplicação
-if authenticate_google_earth_engine():
-    # --- Instâncias dos Módulos com Argumentos ---
-    start_date_exemplo = '2024-01-01'
-    end_date_exemplo = '2024-01-31'
-    location_exemplo = ee.Geometry.Point([-47.9382, -15.7801])
-
-    # Instanciando as classes com os argumentos corretos
-    weather_collector = DataCollector(start_date=start_date_exemplo, end_date=end_date_exemplo, location=location_exemplo)
-    satellite_collector = SatelliteCollector(start_date=start_date_exemplo, end_date=end_date_exemplo, location=location_exemplo)
-    financial_collector = FinancialCollector()
-    trainer = Trainer()
-    predictor = Predictor(model=None)
-    chatbot = Chatbot()
-    irrigation_controller = IrrigationController()
-    digital_twin = DigitalTwin()
-
-    # --- Lógica da Aplicação ---
-
-    # Exemplo de como usar o DataCollector
-    st.header("Dados Meteorológicos")
-    if st.button("Coletar Dados Meteorológicos"):
-        with st.spinner('Coletando dados...'):
-            dados_tempo = weather_collector.get_weather_data()
-            if dados_tempo is not None:
-                st.success("Dados de tempo coletados com sucesso!")
-                st.dataframe(dados_tempo.head())
-            else:
-                st.error("Não foi possível coletar os dados de tempo.")
-
-    # Exemplo de como usar o SatelliteCollector
-    st.header("Análise de Satélite (NDVI)")
-    if st.button("Coletar Dados de Satélite"):
-        with st.spinner('Coletando dados...'):
-            dados_satelite = satellite_collector.get_ndvi_data()
-            if dados_satelite is not None:
-                st.success("Dados de satélite coletados com sucesso!")
-                st.write(dados_satelite)
-            else:
-                st.error("Não foi possível coletar os dados de satélite.")
